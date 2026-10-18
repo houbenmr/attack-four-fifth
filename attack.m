@@ -1,10 +1,10 @@
 p := 2 * 3^10;
 
 while true do
-p := NextPrime(p);
-if (p + 1) mod (835*7) eq 0 then
-break;
-end if;
+  p := NextPrime(p);
+  if (p + 1) mod (8*3*5*7) eq 0 then
+    break;
+  end if;
 end while;
 
 // Search parameters
@@ -34,229 +34,230 @@ pc["frob"] := (T+p)^4;
 
 function IntersectKernels(K1, K2, ell)
 
-// Check whether two (ell,ell)-subgroups intersect or not
-// This is currently slow and should be replaced with a better function
+  // Check whether two (ell,ell)-subgroups intersect or not
+  // This is currently slow and should be replaced with a better function
 
-ePU := WeilPairing(K1[1], K2[1], ell);
-ePV := WeilPairing(K1[1], K2[2], ell);
-eQU := WeilPairing(K1[2], K2[1], ell);
-eQV := WeilPairing(K1[2], K2[2], ell);
+  ePU := WeilPairing(K1[1], K2[1], ell);
+  ePV := WeilPairing(K1[1], K2[2], ell);
+  eQU := WeilPairing(K1[2], K2[1], ell);
+  eQV := WeilPairing(K1[2], K2[2], ell);
 
-return ((eQU eq 1) and (eQV eq 1)) or (&or [(ePU * eQU^t eq 1) and (ePV * eQV^t eq 1) : t in [0..ell-1]]);
+  return ((eQU eq 1) and (eQV eq 1)) or (&or [(ePU * eQU^t eq 1) and (ePV * eQV^t eq 1) : t in [0..ell-1]]);
 end function;
 
 while true do
 
-print "Generating random superspecial hyperelliptic curve...";
+  print "Generating random superspecial hyperelliptic curve...";
 
-//Commented out a walk that does not restrict to good extensions
-//for i in [1..walk_bound] do
-//  r := RationallyIsogenousCurvesG2(H, 2 : precomp := pc, ext_degree := 1);
-//  H := Random(r)[2];
-//end for;
+  //Commented out a walk that does not restrict to good extensions
+  //for i in [1..walk_bound] do
+  //  r := RationallyIsogenousCurvesG2(H, 2 : precomp := pc, ext_degree := 1);
+  //  H := Random(r)[2];
+  //end for;
 
-ell := 2;
 
-walk_bound := 4 * Floor(Log(ell, p));
+  ell := 2;
 
-neighbors := RationallyIsogenousCurvesG2(H, ell : precomp := pc, ext_degree := 1);
+  walk_bound := 4 * Floor(Log(ell, p));
 
-H_previous := H;
+  neighbors := RationallyIsogenousCurvesG2(H, ell : precomp := pc, ext_degree := 1);
 
-H := Random(neighbors)[2];
+  H_previous := H;
 
-f := HyperellipticPolynomials(H);
+  H := Random(neighbors)[2];
 
-for i in [1..walk_bound] do
+  f := HyperellipticPolynomials(H);
 
-printf "%oStep: %o/%o", CodeToString(13), i, walk_bound;
+  for i in [1..walk_bound] do
 
-//  time kernels, basis_data, pc := RationalSymplecticTorsionSubgroups(Jacobian(H), ell : precomp := pc, ext_degree := 1, only_mumford := true);
+    printf "%oStep: %o/%o", CodeToString(13), i, walk_bound;
 
-// print(kernels);
+  //  time kernels, basis_data, pc := RationalSymplecticTorsionSubgroups(Jacobian(H), ell : precomp := pc, ext_degree := 1, only_mumford := true);
 
-// Make sure we only consider maximally isotropic subgroups (special case for ell = 2)
+    // print(kernels);
 
-//  if ell eq 2 then
-//    isotropic_kernels := [r : r in kernels | (r[1][1] * r[2][1] * (r[1] + r[2])[1]) mod f eq 0];
-//    pc["subgroups"] := isotropic_kernels;
-//  end if;
+    // Make sure we only consider maximally isotropic subgroups (special case for ell = 2)
 
-// print(pc["subgroups"]);
+  //  if ell eq 2 then
+  //    isotropic_kernels := [r : r in kernels | (r[1][1] * r[2][1] * (r[1] + r[2])[1]) mod f eq 0];
+  //    pc["subgroups"] := isotropic_kernels;
+  //  end if;
 
-neighbors, foo := RationallyIsogenousCurvesG2(H, ell : precomp := pc, ext_degree := 1);
+    // print(pc["subgroups"]);
 
-// print(neighbors);
+    neighbors, foo := RationallyIsogenousCurvesG2(H, ell : precomp := pc, ext_degree := 1);
 
-// We identify the kernel corresponding to the dual isogeny
-// This required a modification in Isogenies.m so that we return the kernel as the third entry of a neighbor
+    // print(neighbors);
 
-for n in neighbors do
-  if n[1] eq G2Invariants(H_previous) then
-    dual_kernel := n[3];
-  end if;
-end for;
+    // We identify the kernel corresponding to the dual isogeny
+    // This required a modification in Isogenies.m so that we return the kernel as the third entry of a neighbor
 
-// We keep only the neighbors corresponding to good extensions
+    for n in neighbors do
+      if n[1] eq G2Invariants(H_previous) then
+        dual_kernel := n[3];
+      end if;
+    end for;
 
-good_neighbors := [n : n in neighbors | not IntersectKernels(n[3], dual_kernel, ell)]; 
+    // We keep only the neighbors corresponding to good extensions
 
-//  print(#good_neighbors);
+    good_neighbors := [n : n in neighbors | not IntersectKernels(n[3], dual_kernel, ell)]; 
 
-// Update the neighbor by a random one
+  //  print(#good_neighbors);
 
-H_previous := H;
+    // Update the neighbor by a random one
 
-H := Random(good_neighbors)[2];
+    H_previous := H;
 
-//  f := HyperellipticPolynomials(H);
+    H := Random(good_neighbors)[2];
 
-// Reset precomputation array
+  //  f := HyperellipticPolynomials(H);
 
-//  frob := pc["frob"];
-//  pc := AssociativeArray();
-//  pc["frob"] := frob;
+    // Reset precomputation array
 
-end for;
+  //  frob := pc["frob"];
+  //  pc := AssociativeArray();
+  //  pc["frob"] := frob;
 
-// Main algorithm
+  end for;
 
-while true do
+  // Main algorithm
 
-// Initialize table
+  while true do
 
-table := [];
+    // Initialize table
 
-// Entries are [invariants, curve, parent_invariants, degree]
+    table := [];
 
-H0 := H;
+    // Entries are [invariants, curve, parent_invariants, degree]
 
-invs := G2Invariants(H0);
+    H0 := H;
 
-parent_invariants := [];
+    invs := G2Invariants(H0);
 
-degree := 1;
+    parent_invariants := [];
 
-// nodes are heterogeneous lists
+    degree := 1;
 
-node0 := [* invs, H0, parent_invariants, degree *];
+    // nodes are heterogeneous lists
 
-table := [node0];
+    node0 := [* invs, H0, parent_invariants, degree *];
 
-// Iterate ell-adic tree expansion
+    table := [node0];
 
-for ell in Reverse(PrimesUpTo(B)) do
+    // Iterate ell-adic tree expansion
 
-  for e in [0..Floor(Log(ell, N))] do
+    for ell in Reverse(PrimesUpTo(B)) do
 
-    // Select the nodes of the correct ell-adic valuation
-    // that we can expand while respecting the degree bound
-    valid_nodes := [node : node in table | (Valuation(node[4], ell) ge e) and (ell * node[4] le N)];
+      for e in [0..Floor(Log(ell, N))] do
 
-    for node in valid_nodes do
+        // Select the nodes of the correct ell-adic valuation
+        // that we can expand while respecting the degree bound
+        valid_nodes := [node : node in table | (Valuation(node[4], ell) ge e) and (ell * node[4] le N)];
 
-      H := node[2];
+        for node in valid_nodes do
 
-      parent_invariants := node[3];
+          H := node[2];
 
-      deg := node[4];
+          parent_invariants := node[3];
 
-      neighbors, foo := RationallyIsogenousCurvesG2(H, ell : precomp := pc, ext_degree := 1);
+          deg := node[4];
 
-      // Only select good extensions
+          neighbors, foo := RationallyIsogenousCurvesG2(H, ell : precomp := pc, ext_degree := 1);
 
-      if e gt 0 and parent_invariants ne [] then
+          // Only select good extensions
 
-        dual_kernels := [];
+          if e gt 0 and parent_invariants ne [] then
 
-        for n in neighbors do
-          if n[1] eq parent_invariants then
-            Append(~dual_kernels, n[3]);
+            dual_kernels := [];
+
+            for n in neighbors do
+              if n[1] eq parent_invariants then
+                Append(~dual_kernels, n[3]);
+              end if;
+            end for;
+
+            if #dual_kernels ne 1 then
+              print "ERROR: the total number of backtracking isogenies is not exactly one";
+              print(#dual_kernels);
+            end if;
+
+            good_neighbors := [n : n in neighbors | not IntersectKernels(n[3], dual_kernels[1], ell)];
+
+          else
+
+            good_neighbors := neighbors;
+
           end if;
+
+          // Check whether the total number of good neighbors is what we expect
+
+          if e eq 0 then
+            expected_gn := (ell + 1) * (ell^2 + 1);
+          else
+            expected_gn := ell^3;
+          end if;
+
+          if #good_neighbors ne expected_gn then
+            print("ERROR: the total number of good neighbors is not what we expected");
+            print("This could be because we have found a product surface");
+            print(expected_gn);
+            print(#good_neighbors);
+          end if;
+
+          // Replace degree and parent invariants
+
+          deg := ell * deg;
+
+          parent_invariants := node[1];
+
+          // Append new nodes to the table
+
+          for n in good_neighbors do
+
+            new_node := [* n[1], n[2], parent_invariants, deg *];
+
+            Append(~table, new_node);
+
+          end for;
+
         end for;
-
-        if #dual_kernels ne 1 then
-          print "ERROR: the total number of backtracking isogenies is not exactly one";
-          print(#dual_kernels);
-        end if;
-
-        good_neighbors := [n : n in neighbors | not IntersectKernels(n[3], dual_kernels[1], ell)];
-
-      else
-
-        good_neighbors := neighbors;
-
-      end if;
-
-      // Check whether the total number of good neighbors is what we expect
-
-      if e eq 0 then
-        expected_gn := (ell + 1) * (ell^2 + 1);
-      else
-        expected_gn := ell^3;
-      end if;
-
-      if #good_neighbors ne expected_gn then
-        print("ERROR: the total number of good neighbors is not what we expected");
-        print("This could be because we have found a product surface");
-        print(expected_gn);
-        print(#good_neighbors);
-      end if;
-
-      // Replace degree and parent invariants
-
-      deg := ell * deg;
-
-      parent_invariants := node[1];
-
-      // Append new nodes to the table
-
-      for n in good_neighbors do
-
-        new_node := [* n[1], n[2], parent_invariants, deg *];
-
-        Append(~table, new_node);
 
       end for;
 
     end for;
 
-  end for;
+    // Finding collisions in the table
 
-end for;
+    l := #table;
 
-// Finding collisions in the table
+    pairs := [];
 
-l := #table;
+    for i in [1..l] do
+      for j in [i+1..l] do
+        if table[i][1] eq table[j][1] then
+          Append(~pairs, <table[i], table[j]>);
+        end if;
+      end for;
+    end for;
 
-pairs := [];
+    print "Total number of collisions found:";
 
-for i in [1..l] do
-  for j in [i+1..l] do
-    if table[i][1] eq table[j][1] then
-      Append(~pairs, <table[i], table[j]>);
+    print(#pairs);
+
+    if #pairs gt 0 then
+      break;
     end if;
-  end for;
-end for;
 
-print "Total number of collisions found:";
+    // Rerandomize
 
-print(#pairs);
+    ell := NextPrime(B);
 
-if #pairs gt 0 then
-  break;
-end if;
+    neighbors := RationallyIsogenousCurvesG2(H0, ell : precomp := pc, ext_degree := 1);
 
-// Rerandomize
+    H := Random(neighbors)[2];
 
-ell := NextPrime(B);
+  end while;
 
-neighbors := RationallyIsogenousCurvesG2(H0, ell : precomp := pc, ext_degree := 1);
-
-H := Random(neighbors)[2];
-
-end while;
-
-PrintFile("output3.txt", pairs : Overwrite := true);
+  PrintFile("output3.txt", pairs : Overwrite := true);
 
 end while;
